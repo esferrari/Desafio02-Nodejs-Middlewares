@@ -44,57 +44,32 @@ function checksCreateTodosUserAvailability(request, response, next) {
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
-  // Esse middleware deve receber o **username** de dentro do header e o **id** de um *todo* de dentro de `request.params`. 
-  // Você deve validar o usuário, validar que o `id` seja um uuid e também validar que esse `id` pertence a um *todo* do usuário informado.
-  // Com todas as validações passando, o *todo* encontrado deve ser passado para o `request` assim como o usuário encontrado também e a função next deve ser chamada.
+
   const { username } = request.headers;
   const { id } = request.params;
-  const userExists = users.some(user => user.username == username);
-  // const userExists = users.findIndex(user => user.username == username);  
 
-  if(userExists){
-    const user = users.find(user => user.username == username); 
-    if(!validate(id)){
-      return response.status(400).json({message: 'Id format incorrect'})
-    }else {
-      const todoExists = user.todos.some(todo => todo.id == id)
-      
-      if(todoExists){
-        const todo = user.todos.find(todo => todo.id == id)
-        request.user = user;
-        request.todo = todo;
-        return next();
-      }else{
-        return response.status(404).json({message: 'Todo not Found'})
-      }
-    }
-  }else{
-    return response.status(404).json({message: 'User not found'})
+  const checkUuid = validate(id);
+  if (!checkUuid) {
+    return response
+      .status(400)
+      .json({ done: true, error: "Do you not have enough access" });
   }
 
+  const user = users.find((user) => user.username === username);
 
-  
+  if (!user) {
+    return response.status(404).json({ error: "User not found" });
+  }
 
-  // if(userExists != -1){
-  //   if(validate(id)){
-  //     const todoIndex = users[userExists].todos.findIndex(todo => todo.id == id)
+  const todo = user.todos.find((todos) => todos.id === id);
 
-  //       if(todoIndex == -1){
-  //         return response.status(404).json({message: 'Todo not Found'})
-  //       }else {
-  //         request.user = users[userExists];
-  //         request.todo = users[userExists].todos[todoIndex];      
-  //         return next();            
-  //       }
+  if (!todo)
+    return response.status(404).json({ error: "User or Todo not found" });
 
-  //   }else{
-  //     return response.status(400).json({message: 'Id format incorrect'})
-  //   }
-  // }else {
-  //   return response.status(404).json({message: 'User not exists'})
-  // }
-  
+  request.user = user;
+  request.todo = todo;
+
+  return next();  
   
 }
 
@@ -105,9 +80,7 @@ function findUserById(request, response, next) {
   // mesmo deve ser repassado para dentro do request.user e a função next deve ser chamada.
 
   const { id } = request.params;
-  console.log(id)
   const user = users.find(user => user.id == id);
-  console.log(user);
 
   if(user){
     request.user = user;
@@ -115,8 +88,6 @@ function findUserById(request, response, next) {
   }else{
     return response.status(404).json({message: 'User not found'})
   }
-
-
 }
 
 app.post('/users', (request, response) => {
